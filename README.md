@@ -1,4 +1,4 @@
-# Hi there, I'm Ye-chan Yu 👋
+# Ye-chan Yu
 **Security Researcher | Software Engineering | Vice President @ Y-CERT**
 
 [![Blog](https://img.shields.io/badge/Tech_Blog-1E1E1E?style=for-the-badge&logo=github&logoColor=white)](https://zkfla.github.io)
