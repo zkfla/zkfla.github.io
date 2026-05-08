@@ -1,6 +1,9 @@
 ---
 title: "2026 hacktheon Writeup"
 date: 2026-04-27 14:30:00 +0900
+image:
+  path: ../image/image18.png
+  alt: 2026 핵테온 세종
 categories: [CTF / Wargame]
 tags: [hacktheon, CTF]
 ---

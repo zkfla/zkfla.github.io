@@ -1,0 +1,333 @@
+---
+layout: default
+---
+
+{% include lang.html %}
+
+{% assign all_pinned = site.posts | where: 'pin', 'true' %}
+{% assign all_normal = site.posts | where_exp: 'item', 'item.pin != true and item.hidden != true' %}
+
+{% assign posts = '' | split: '' %}
+
+{% assign visible_start = paginator.page | minus: 1 | times: paginator.per_page %}
+{% assign visible_end = visible_start | plus: paginator.per_page %}
+
+{% if all_pinned.size > visible_start %}
+  {% if all_pinned.size > visible_end %}
+    {% assign pinned_size = paginator.per_page %}
+  {% else %}
+    {% assign pinned_size = all_pinned.size | minus: visible_start %}
+  {% endif %}
+
+  {% for i in (visible_start..all_pinned.size) limit: pinned_size %}
+    {% assign posts = posts | push: all_pinned[i] %}
+  {% endfor %}
+{% else %}
+  {% assign pinned_size = 0 %}
+{% endif %}
+
+{% assign normal_size = paginator.posts | size | minus: pinned_size %}
+
+{% if normal_size > 0 %}
+  {% if pinned_size > 0 %}
+    {% assign normal_start = 0 %}
+  {% else %}
+    {% assign normal_start = visible_start | minus: all_pinned.size %}
+  {% endif %}
+
+  {% assign normal_end = normal_start | plus: normal_size | minus: 1 %}
+
+  {% for i in (normal_start..normal_end) %}
+    {% assign posts = posts | push: all_normal[i] %}
+  {% endfor %}
+{% endif %}
+
+<!-- 탭 버튼 -->
+<div class="home-tab-buttons">
+  <button class="home-tab-btn active" onclick="showHomeTab('posts', this)">Posts</button>
+  <button class="home-tab-btn" onclick="showHomeTab('about', this)">About</button>
+  <button class="home-tab-btn" onclick="showHomeTab('categories', this)">Categories</button>
+</div>
+
+<!-- 최신 글 탭 -->
+<div id="home-tab-posts" class="home-tab-content active">
+  <div id="post-list" class="flex-grow-1 px-xl-1">
+    {% for post in posts %}
+      <article class="card-wrapper card">
+        <a href="{{ post.url | relative_url }}" class="post-preview row g-0 flex-md-row-reverse">
+          {% assign card_body_col = '12' %}
+
+          {% if post.image %}
+            {% assign src = post.image.path | default: post.image %}
+
+            {% if post.media_subpath %}
+              {% unless src contains '://' %}
+                {% assign src = post.media_subpath
+                  | append: '/'
+                  | append: src
+                  | replace: '///', '/'
+                  | replace: '//', '/'
+                %}
+              {% endunless %}
+            {% endif %}
+
+            {% if post.image.lqip %}
+              {% assign lqip = post.image.lqip %}
+
+              {% if post.media_subpath %}
+                {% unless lqip contains 'data:' %}
+                  {% assign lqip = post.media_subpath
+                    | append: '/'
+                    | append: lqip
+                    | replace: '///', '/'
+                    | replace: '//', '/'
+                  %}
+                {% endunless %}
+              {% endif %}
+
+              {% assign lqip_attr = 'lqip="' | append: lqip | append: '"' %}
+            {% endif %}
+
+            {% assign alt = post.image.alt | xml_escape | default: 'Preview Image' %}
+
+            <div class="col-md-5">
+              <img src="{{ src }}" alt="{{ alt }}" {{ lqip_attr }}>
+            </div>
+
+            {% assign card_body_col = '7' %}
+          {% endif %}
+
+          <div class="col-md-{{ card_body_col }}">
+            <div class="card-body d-flex flex-column">
+              <h1 class="card-title my-2 mt-md-0">{{ post.title }}</h1>
+
+              <div class="card-text content mt-0 mb-3">
+                <p>{% include post-summary.html %}</p>
+              </div>
+
+              <div class="post-meta flex-grow-1 d-flex align-items-end">
+                <div class="me-auto">
+                  <i class="far fa-calendar fa-fw me-1"></i>
+                  {% include datetime.html date=post.date lang=lang %}
+
+                  {% if post.categories.size > 0 %}
+                    <i class="far fa-folder-open fa-fw me-1"></i>
+                    <span class="categories">
+                      {% for category in post.categories %}
+                        {{ category }}
+                        {%- unless forloop.last -%},{%- endunless -%}
+                      {% endfor %}
+                    </span>
+                  {% endif %}
+                </div>
+
+                {% if post.pin %}
+                  <div class="pin ms-1">
+                    <i class="fas fa-thumbtack fa-fw"></i>
+                    <span>{{ site.data.locales[lang].post.pin_prompt }}</span>
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </a>
+      </article>
+    {% endfor %}
+  </div>
+
+  {% if paginator.total_pages > 1 %}
+    {% include post-paginator.html %}
+  {% endif %}
+</div>
+
+<!-- 소개 탭 -->
+<div id="home-tab-about" class="home-tab-content">
+  <div class="px-xl-1 about-wrapper">
+    {% capture about_content %}{% include about.md %}{% endcapture %}
+    {{ about_content | markdownify }}
+  </div>
+</div>
+
+<!-- 카테고리 탭 -->
+<div id="home-tab-categories" class="home-tab-content">
+  <div class="flex-grow-1 px-xl-1">
+    {% assign sorted_categories = site.categories | sort %}
+    {% for category in sorted_categories %}
+      {% assign cat_name = category[0] %}
+      {% assign cat_posts = category[1] %}
+
+      <!-- 최상위 카테고리만 표시 (서브카테고리는 부모 안에서 렌더) -->
+      {% assign is_sub = false %}
+      {% for other_cat in sorted_categories %}
+        {% for sub_post in other_cat[1] %}
+          {% if sub_post.categories.size > 1 %}
+            {% assign sub_name = sub_post.categories.last %}
+            {% if sub_name == cat_name and sub_post.categories.first != cat_name %}
+              {% assign is_sub = true %}
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+      {% endfor %}
+
+      {% unless is_sub %}
+        {% assign sub_cats = '' | split: '' %}
+        {% for post in cat_posts %}
+          {% if post.categories.size > 1 %}
+            {% assign sub = post.categories.last %}
+            {% unless sub_cats contains sub %}
+              {% assign sub_cats = sub_cats | push: sub %}
+            {% endunless %}
+          {% endif %}
+        {% endfor %}
+
+        {% assign has_sub = sub_cats.size | is_greater_than: 0 %}
+        {% assign direct_posts = cat_posts | where_exp: 'p', 'p.categories.size == 1' %}
+
+        <div class="category-item card-wrapper card mb-3">
+          <!-- 카테고리 헤더 -->
+          <div class="category-header d-flex align-items-center justify-content-between p-3"
+               onclick="toggleCategory('cat-{{ cat_name | slugify }}')"
+               style="cursor: pointer;">
+            <div class="d-flex align-items-center gap-2">
+              <i class="far fa-folder{% if sub_cats.size > 0 %}-open{% endif %} fa-fw"></i>
+              <span class="fw-semibold" style="color: var(--link-color)">{{ cat_name }}</span>
+              <span class="text-muted small">
+                {% if sub_cats.size > 0 %}
+                  {{ sub_cats.size }}카테고리 ,
+                {% endif %}
+                {{ cat_posts.size }}포스트
+              </span>
+            </div>
+            <i class="category-arrow fas fa-chevron-right fa-fw text-muted"
+               id="arrow-{{ cat_name | slugify }}"
+               style="transition: transform 0.2s;"></i>
+          </div>
+
+          <!-- 펼쳐지는 내용 -->
+          <div id="cat-{{ cat_name | slugify }}" style="display:none;">
+
+            <!-- 직접 포스트 (서브카테고리 없는 것) -->
+            {% for post in direct_posts %}
+              <a href="{{ post.url | relative_url }}"
+                 class="d-flex justify-content-between align-items-center px-4 py-2 border-top text-decoration-none post-row">
+                <span style="font-size: 0.9rem; color: var(--text-color)">{{ post.title }}</span>
+                <span class="text-muted small">{{ post.date | date: "%Y-%m-%d" }}</span>
+              </a>
+            {% endfor %}
+
+            <!-- 서브카테고리 -->
+            {% for sub_name in sub_cats %}
+              {% assign sub_posts = site.categories[sub_name] %}
+              <div class="border-top">
+                <div class="d-flex align-items-center gap-2 px-4 py-2 sub-category-header"
+                     onclick="toggleCategory('cat-{{ sub_name | slugify }}')"
+                     style="cursor: pointer;">
+                  <i class="far fa-folder fa-fw" style="font-size:0.85rem"></i>
+                  <span style="font-size:0.9rem; color: var(--link-color)">{{ sub_name }}</span>
+                  <span class="text-muted small">{{ sub_posts.size }}포스트</span>
+                  <i class="fas fa-chevron-right fa-fw text-muted ms-auto"
+                     id="arrow-{{ sub_name | slugify }}"
+                     style="transition: transform 0.2s; font-size:0.8rem"></i>
+                </div>
+                <div id="cat-{{ sub_name | slugify }}" style="display:none;">
+                  {% for post in sub_posts %}
+                    <a href="{{ post.url | relative_url }}"
+                       class="d-flex justify-content-between align-items-center px-5 py-2 border-top text-decoration-none post-row">
+                      <span style="font-size: 0.9rem; color: var(--text-color)">{{ post.title }}</span>
+                      <span class="text-muted small">{{ post.date | date: "%Y-%m-%d" }}</span>
+                    </a>
+                  {% endfor %}
+                </div>
+              </div>
+            {% endfor %}
+
+          </div>
+        </div>
+      {% endunless %}
+    {% endfor %}
+  </div>
+</div>
+
+<style>
+.home-tab-buttons {
+  display: flex;
+  gap: 0;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+.home-tab-btn {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 0.5rem 1.2rem;
+  margin-bottom: -1px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: var(--text-muted-color);
+  transition: color 0.2s, border-color 0.2s;
+}
+.home-tab-btn:hover {
+  color: var(--text-color);
+}
+.home-tab-btn.active {
+  color: var(--link-color);
+  border-bottom-color: var(--link-color);
+  font-weight: 600;
+}
+.home-tab-content {
+  display: none;
+}
+.home-tab-content.active {
+  display: block;
+}
+.post-title-sm {
+  font-size: 0.9rem;
+  color: var(--text-color);
+}
+.about-wrapper img {
+  height: 22px;
+  width: auto;
+  vertical-align: middle;
+}
+.about-wrapper .preview-img {
+  display: inline !important;
+  background: none !important;
+}
+
+.category-header:hover {
+  background: var(--hover-bg, rgba(0,0,0,0.03));
+  border-radius: 0.5rem 0.5rem 0 0;
+}
+.post-row:hover {
+  background: var(--hover-bg, rgba(0,0,0,0.03));
+}
+.sub-category-header:hover {
+  background: var(--hover-bg, rgba(0,0,0,0.03));
+}
+
+</style>
+
+<script>
+function showHomeTab(name, btn) {
+  document.querySelectorAll('.home-tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.home-tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('home-tab-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.about-wrapper .shimmer').forEach(el => {
+    el.classList.remove('shimmer');
+  });
+});
+function toggleCategory(id) {
+  const el = document.getElementById(id);
+  const arrow = document.getElementById('arrow-' + id.replace('cat-', ''));
+  if (el.style.display === 'none') {
+    el.style.display = 'block';
+    if (arrow) arrow.style.transform = 'rotate(90deg)';
+  } else {
+    el.style.display = 'none';
+    if (arrow) arrow.style.transform = 'rotate(0deg)';
+  }
+}
+</script>

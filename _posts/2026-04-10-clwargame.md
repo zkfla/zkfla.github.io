@@ -1,6 +1,9 @@
 ---
 title: "wiz사에서 출시한 클라우드 관련 wargame풀이"
 date: 2026-04-10 14:40:00 +0900
+image:
+  path: ../image/image19.png
+  alt: eksclustergames
 categories: [CTF / Wargame, Cloud]
 tags: [Cloud, Wargame]
 ---
