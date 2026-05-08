@@ -1,8 +1,8 @@
 ---
 title: "First Blog Posting"
 date: 2026-04-10 14:30:00 +0900
-categories: [소개글]
-tags: [개발, CTF / Wargame, BugBounty, 블로그 / 기술문서, 논문 / 컨퍼런스, 공모전 / 자격증]
+categories: [기술문서]
+tags: [first]
 ---
 
 # 반갑습니다

